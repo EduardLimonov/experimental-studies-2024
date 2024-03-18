@@ -26,6 +26,7 @@ class SKPredModel:
         :return: test_df extended with generated features
         """
 
+        test_df = test_df.reset_index()
         d = test_df.copy()
         d["Elapsed"] = d["Elapsed"].apply(self.__parse_elapsed)
         d["Timelimit"] = d["Timelimit"].apply(self.__parse_elapsed)
@@ -45,7 +46,7 @@ class SKPredModel:
         ] + \
         [c for c in d.columns if "mean_elapsed" in c]
         d = d[predict_cols_needed]
-        return d
+        return d.loc[test_df.index]
 
     @staticmethod
     def __add_features(d: pd.DataFrame) -> pd.DataFrame:
