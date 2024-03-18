@@ -3,6 +3,14 @@ import pickle
 
 
 class SKPredModel:
+
+    MODEL_KEYS = [
+        'Area', 'Partition', 'ReqNodes', 'ReqCPUS', 'Timelimit', 'Submit',
+        'Priority', 'UID', 'mean_elapsed_all', 'mean_elapsed_4',
+        'mean_elapsed_8', 'mean_elapsed_16', 'mean_elapsed_64',
+        'mean_elapsed_256'
+    ]
+    
     def __init__(self, model_path: str = "model.PICKLE"):
         """
         Here you initialize your model
@@ -80,6 +88,9 @@ class SKPredModel:
         :param test_df: dataframe to predict
         :return: vector of estimated times in milliseconds
         """
+        for key in self.MODEL_KEYS:
+            assert key in test_df.keys(), f"{key} column missed in test_df"
+            
         return self._model.predict(test_df)
 
 
