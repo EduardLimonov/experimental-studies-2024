@@ -1,6 +1,9 @@
 import pandas as pd
 import pickle
 from typing import List
+from tsfresh import extract_features
+from tsfresh.utilities.dataframe_functions import roll_time_series, make_forecasting_frame
+from tsfresh.feature_extraction import settings
 
 
 class SKPredModel:
@@ -33,17 +36,31 @@ class SKPredModel:
                 d[c].fillna(-1, inplace=True)
         
         d["Submit"] = pd.to_datetime(d["Submit"])
+        d = self.__modify_df(d)
 
         predict_cols_needed = [
             "Area", "Partition", "ReqNodes", "ReqCPUS", "Timelimit", "Submit", "Priority", "UID"
         ] + \
-        [c for c in d.columns if "mean_elapsed" in c]
+        [c for c in d.columns if "mean_elapsed" in c or "Elapsed_" in c]
         d = d[predict_cols_needed]
         return d.loc[test_df.index]
 
     @property
     def model_keys(self) -> List[str]:
         return list(self._model.feature_names_)
+
+    @staticmethod
+    def __modify_df(df):
+        df_exp = df.copy()
+        df_exp = df_exp.sort_values("Submit")
+        d_rolled = roll_time_series(df_exp[["UID", "Submit", "Elapsed"]], column_id="UID", column_sort="Submit", min_timeshift=1, max_timeshift=8)
+        df_features = extract_features(
+            d_rolled[["id", "Submit", "Elapsed"]], column_id="id", column_sort="Submit", 
+            # default_fc_parameters=settings.MinimalFCParameters()
+        ).reset_index().rename(columns={"level_0": "UID", "level_1": "Submit"})
+    
+        df_exp = df_exp.merge(df_features, on=["UID", "Submit"], how="left").fillna(-1)
+        return df_exp
     
     @staticmethod
     def __add_features(d: pd.DataFrame) -> pd.DataFrame:
