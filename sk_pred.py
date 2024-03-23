@@ -7,10 +7,11 @@ from tsfresh.feature_extraction import settings
 
 
 class SKPredModel:
-    def __init__(self, model_path: str = "model.PICKLE"):
+    def __init__(self, model_path: str = "model_tsfresh.PICKLE", extract_tsfresh_features: bool = True):
         """
         Here you initialize your model
         """
+        self._extract_tsfresh_features = extract_tsfresh_features
         with open(model_path, "rb") as f:
             self._model = pickle.load(f)
 
@@ -36,13 +37,10 @@ class SKPredModel:
                 d[c].fillna(-1, inplace=True)
         
         d["Submit"] = pd.to_datetime(d["Submit"])
-        d = self.__modify_df(d)
+        if self._extract_tsfresh_features:
+            d = self.__modify_df(d)
 
-        predict_cols_needed = [
-            "Area", "Partition", "ReqNodes", "ReqCPUS", "Timelimit", "Submit", "Priority", "UID"
-        ] + \
-        [c for c in d.columns if "mean_elapsed" in c or "Elapsed_" in c]
-        d = d[predict_cols_needed]
+        d = d[self.model_keys]
         return d.loc[test_df.index]
 
     @property
