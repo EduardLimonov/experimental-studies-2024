@@ -37,6 +37,8 @@ class SKPredModel:
                 d[c].fillna(-1, inplace=True)
         
         d["Submit"] = pd.to_datetime(d["Submit"])
+        d = d.groupby("UID", group_keys=False, as_index=False).apply(self.__shift_target)
+        
         if self._extract_tsfresh_features:
             d = self.__modify_df(d)
 
@@ -51,14 +53,19 @@ class SKPredModel:
     def __modify_df(df):
         df_exp = df.copy()
         df_exp = df_exp.sort_values("Submit")
-        d_rolled = roll_time_series(df_exp[["UID", "Submit", "Elapsed"]], column_id="UID", column_sort="Submit", min_timeshift=1, max_timeshift=8)
+        d_rolled = roll_time_series(df_exp[["UID", "Submit", "Elapsed_prev"]], column_id="UID", column_sort="Submit", min_timeshift=1, max_timeshift=8)
         df_features = extract_features(
-            d_rolled[["id", "Submit", "Elapsed"]], column_id="id", column_sort="Submit", 
+            d_rolled[["id", "Submit", "Elapsed_prev"]], column_id="id", column_sort="Submit", 
             # default_fc_parameters=settings.MinimalFCParameters()
         ).reset_index().rename(columns={"level_0": "UID", "level_1": "Submit"})
     
         df_exp = df_exp.merge(df_features, on=["UID", "Submit"], how="left").fillna(-1)
         return df_exp
+
+    @staticmethod
+    def __shift_target(df):
+        df["Elapsed_prev"] = df["Elapsed"].shift(1).fillna(0)
+        return df
     
     @staticmethod
     def __add_features(d: pd.DataFrame) -> pd.DataFrame:
