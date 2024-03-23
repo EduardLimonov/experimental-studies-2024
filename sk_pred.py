@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import pickle
 from typing import List
 from tsfresh import extract_features
@@ -111,4 +112,7 @@ class SKPredModel:
         for key in self.model_keys:
             assert key in test_df.keys(), f"{key} column missed in test_df"
             
-        return self._model.predict(test_df)
+        predictions = self._model.predict(test_df)
+
+        predictions = np.where(predictions >= 0, predictions, 0)
+        return predictions
