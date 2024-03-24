@@ -54,10 +54,9 @@ class SKPredModel:
     def __modify_df(df):
         df_exp = df.copy()
         df_exp = df_exp.sort_values("Submit")
-        d_rolled = roll_time_series(df_exp[["UID", "Submit", "Elapsed_prev"]], column_id="UID", column_sort="Submit", min_timeshift=1, max_timeshift=8)
+        d_rolled = roll_time_series(df_exp[["UID", "Submit", "Elapsed_prev", "Timelimit"]], column_id="UID", column_sort="Submit", min_timeshift=1, max_timeshift=8)
         df_features = extract_features(
-            d_rolled[["id", "Submit", "Elapsed_prev"]], column_id="id", column_sort="Submit", 
-            # default_fc_parameters=settings.MinimalFCParameters()
+            d_rolled[["id", "Submit", "Elapsed_prev", "Timelimit"]], column_id="id", column_sort="Submit"
         ).reset_index().rename(columns={"level_0": "UID", "level_1": "Submit"})
     
         df_exp = df_exp.merge(df_features, on=["UID", "Submit"], how="left").fillna(-1)
